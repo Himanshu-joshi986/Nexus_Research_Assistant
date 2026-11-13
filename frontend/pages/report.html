@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report â€“ NexusResearch</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"></div>
+      <div class="logo-text">Nexus<span>Research</span></div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="avatar" id="user-avatar"></div>
+        <span class="name" id="user-name"></span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
+        <button class="btn-logout" id="logout-btn" style="flex:1">Sign out</button>
+        <button class="theme-toggle" id="theme-toggle-btn" title="Toggle theme"></button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="flex-between" style="margin-bottom:20px">
+      <div>
+        <a href="history.html" class="text-muted text-sm" style="display:inline-flex;align-items:center;gap:4px;margin-bottom:6px">
+          <i data-lucide="arrow-left" style="width:13px;height:13px"></i> Back to History
+        </a>
+        <h1 class="page-title" id="report-topic" style="margin-bottom:6px">Loading...</h1>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span id="report-badge"></span>
+          <span class="text-muted text-xs" id="report-date"></span>
+          <span style="color:var(--border2)">Â·</span>
+          <span class="text-muted text-xs" id="report-words"></span>
+          <span style="color:var(--border2)">Â·</span>
+          <span class="text-muted text-xs" id="report-sources"></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" id="copy-btn">
+          <i data-lucide="copy" style="width:13px;height:13px"></i> Copy
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">
+          <i data-lucide="printer" style="width:13px;height:13px"></i> Print
+        </button>
+      </div>
+    </div>
+
+    <div id="tabs-container">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-report">Report</button>
+        <button class="tab-btn" data-tab="tab-keywords">Keywords</button>
+        <button class="tab-btn" data-tab="tab-entities">Entities</button>
+        <button class="tab-btn" data-tab="tab-sources">Sources</button>
+        <button class="tab-btn" data-tab="tab-chat">Chat</button>
+      </div>
+
+      <div class="tab-panel active card" id="tab-report">
+        <div class="report-content" id="report-body">
+          <div class="empty-state"><i data-lucide="file-text" style="width:32px;height:32px;opacity:0.3"></i><p>Loading report...</p></div>
+        </div>
+      </div>
+
+      <div class="tab-panel card" id="tab-keywords">
+        <div class="section-head">Keyword Cloud</div>
+        <div class="keyword-cloud" id="kw-cloud" style="margin-bottom:28px"></div>
+        <div class="section-head">Relevance Scores</div>
+        <div class="bar-chart" id="kw-bars"></div>
+      </div>
+
+      <div class="tab-panel card" id="tab-entities">
+        <div class="section-head">Named Entities Detected</div>
+        <div id="entities-grid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+
+      <div class="tab-panel card" id="tab-sources">
+        <div class="section-head">Research Sources</div>
+        <div class="source-list" id="sources-list"></div>
+      </div>
+
+      <div class="tab-panel card" id="tab-chat">
+        <div class="section-head">Chat with this Report</div>
+        <p class="text-muted text-sm" style="margin-bottom:16px">Ask anything about the research content. Powered by RAG â€” answers grounded in source material.</p>
+        <div class="chat-box" id="chat-box">
+          <div class="msg ai">
+            <div class="msg-avatar"><i data-lucide="bot" style="width:14px;height:14px"></i></div>
+            <div class="msg-bubble">Hello! I have read this research report in full. Ask me anything about it.</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Ask a question about this report..." />
+          <button class="btn btn-primary" id="chat-send">
+            <i data-lucide="send" style="width:15px;height:15px"></i> Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../components/config.js"></script>
+<script src="../components/app.js"></script>
+<script>
+if (!Auth.require()) throw '';
+initSidebar('history');
+initTabs('tabs-container');
+
+const params = new URLSearchParams(location.search);
+const reportId = params.get('id');
+if (!reportId) { location.href = 'history.html'; throw ''; }
+let sessionId = '';
+
+async function loadReport() {
+  try {
+    const r = await apiGet('/reports/'+reportId);
+    sessionId = r.session_id || '';
+    document.getElementById('report-topic').textContent = r.topic;
+    document.getElementById('report-badge').innerHTML = depthBadge(r.depth);
+    document.getElementById('report-date').textContent = new Date(r.created_at+'Z').toLocaleString();
+    document.getElementById('report-words').textContent = (r.word_count||0).toLocaleString()+' words';
+    document.getElementById('report-sources').textContent = (r.sources?.length||0)+' sources';
+    document.getElementById('report-body').innerHTML = renderMarkdown(r.report);
+
+    if (r.keywords?.length) {
+      renderKeywordCloud(r.keywords, 'kw-cloud');
+      const maxS = Math.max(...r.keywords.map(k=>k.score), 0.01);
+      document.getElementById('kw-bars').innerHTML = r.keywords.slice(0,15).map(k=>`
+        <div class="bar-row">
+          <span class="bar-label">${k.word}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(k.score/maxS)*100}%"></div></div>
+          <span class="bar-count text-xs">${k.score.toFixed(2)}</span>
+        </div>`).join('');
+    }
+
+    const lc = {ORG:'#6c63ff',PERSON:'#10d9a0',GPE:'#f59e0b',LOC:'#38bdf8',DATE:'#a78bfa',PRODUCT:'#f43f5e',EVENT:'#f97316',DEFAULT:'#7c8598'};
+    if (r.entities?.length) {
+      const seen = new Set();
+      document.getElementById('entities-grid').innerHTML = r.entities
+        .filter(e => { if(seen.has(e.text)) return false; seen.add(e.text); return true; })
+        .map(e => { const c=lc[e.label]||lc.DEFAULT; return `<span class="kw-tag" style="background:${c}18;color:${c};border:1px solid ${c}30" title="${e.label}">${e.text} <span style="opacity:.5;font-size:.7em">${e.label}</span></span>`; }).join('');
+    }
+
+    if (r.sources?.length) {
+      document.getElementById('sources-list').innerHTML = r.sources.map((s,i) => `
+        <div class="source-item">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span class="source-num">${i+1}</span>
+            <div>
+              <div class="s-title">${s.title||'Untitled Source'}</div>
+              <a href="${s.url}" target="_blank" rel="noopener">${s.url}</a>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+    lucide.createIcons();
+  } catch(e) {
+    document.getElementById('report-body').innerHTML = '<div class="empty-state"><i data-lucide="alert-circle" style="width:32px;height:32px;color:var(--danger)"></i><p>Failed to load report</p></div>';
+    lucide.createIcons();
+  }
+}
+loadReport();
+
+document.getElementById('copy-btn').onclick = () => {
+  navigator.clipboard.writeText(document.getElementById('report-body').innerText).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerHTML = '<i data-lucide="check" style="width:13px;height:13px"></i> Copied!';
+    lucide.createIcons();
+    setTimeout(() => { btn.innerHTML = '<i data-lucide="copy" style="width:13px;height:13px"></i> Copy'; lucide.createIcons(); }, 2000);
+  });
+};
+
+function appendMsg(role, html) {
+  const box = document.getElementById('chat-box');
+  const div = document.createElement('div');
+  div.className = 'msg '+role;
+  const avatar = role==='user'
+    ? '<i data-lucide="user" style="width:14px;height:14px"></i>'
+    : '<i data-lucide="bot" style="width:14px;height:14px"></i>';
+  div.innerHTML = `<div class="msg-avatar">${avatar}</div><div class="msg-bubble">${html}</div>`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  lucide.createIcons();
+  return div.querySelector('.msg-bubble');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  appendMsg('user', q);
+  const bubble = appendMsg('ai', '<span class="spinner"></span>');
+  try {
+    const res = await apiPost('/chat', {report_id:reportId, session_id:sessionId, question:q});
+    bubble.textContent = res.answer;
+  } catch(e) {
+    bubble.innerHTML = '<span style="color:var(--danger)">Error: '+e.message+'</span>';
+  }
+}
+document.getElementById('chat-send').onclick = sendChat;
+document.getElementById('chat-input').onkeydown = e => { if (e.key==='Enter'&&!e.shiftKey) sendChat(); };
+lucide.createIcons();
+</script>
+</body>
+</html>
+

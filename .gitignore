@@ -1,0 +1,18 @@
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Python environments and generated files
+venv/
+__pycache__/
+*.py[cod]
+
+# Runtime data (accounts, generated reports, and ChromaDB)
+backend/data/users.json
+backend/data/reports.json
+backend/data/chroma_db/
+

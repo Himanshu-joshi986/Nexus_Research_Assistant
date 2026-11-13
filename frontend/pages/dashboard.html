@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard â€“ NexusResearch</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"></div>
+      <div class="logo-text">Nexus<span>Research</span></div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="avatar" id="user-avatar"></div>
+        <span class="name" id="user-name"></span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
+        <button class="btn-logout" id="logout-btn" style="flex:1">Sign out</button>
+        <button class="theme-toggle" id="theme-toggle-btn" title="Toggle theme"></button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <p class="text-muted text-sm" style="margin-bottom:4px">Good to see you,</p>
+        <h1 class="page-title" style="margin-bottom:0" id="welcome-name">â€“</h1>
+      </div>
+      <a href="research.html" class="btn btn-primary btn-lg">
+        <i data-lucide="search" style="width:16px;height:16px"></i> New Research
+      </a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="icon"><i data-lucide="file-text" style="width:28px;height:28px;color:#a78bfa"></i></div>
+        <div class="label">Total Reports</div><div class="value" id="stat-total">â€“</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i data-lucide="trending-up" style="width:28px;height:28px;color:#10d9a0"></i></div>
+        <div class="label">This Week</div><div class="value" id="stat-week">â€“</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i data-lucide="layers" style="width:28px;height:28px;color:#f59e0b"></i></div>
+        <div class="label">Advanced</div><div class="value" id="stat-adv">â€“</div>
+      </div>
+      <div class="stat-card">
+        <div class="icon"><i data-lucide="tag" style="width:28px;height:28px;color:#38bdf8"></i></div>
+        <div class="label">Unique Keywords</div><div class="value" id="stat-kw">â€“</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px">
+      <div class="card">
+        <div class="section-head">Keyword Cloud</div>
+        <div class="keyword-cloud" id="kw-cloud">
+          <div class="empty-state" style="padding:20px">
+            <i data-lucide="cloud" style="width:32px;height:32px;opacity:0.3"></i>
+            <p>No keywords yet</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-head">Research Depth</div>
+        <div class="bar-chart" id="depth-chart">
+          <div class="empty-state" style="padding:20px">
+            <i data-lucide="bar-chart-2" style="width:32px;height:32px;opacity:0.3"></i>
+            <p>No data yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:18px">
+        <div class="section-head" style="margin-bottom:0">Recent Reports</div>
+        <a href="history.html" class="btn btn-secondary btn-sm">View All</a>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Topic</th><th>Depth</th><th>When</th><th></th></tr></thead>
+          <tbody id="recent-tbody">
+            <tr><td colspan="4"><div class="empty-state" style="padding:16px"><p>Loading...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../components/config.js"></script>
+<script src="../components/app.js"></script>
+<script>
+if (!Auth.require()) throw '';
+initSidebar('dashboard');
+const user = Auth.get();
+document.getElementById('welcome-name').textContent = user.name;
+
+async function loadDashboard() {
+  try {
+    const [stats, reports] = await Promise.all([
+      apiGet('/stats?user_id=' + user.id),
+      apiGet('/reports?user_id=' + user.id)
+    ]);
+    document.getElementById('stat-total').textContent = stats.total_reports;
+    document.getElementById('stat-kw').textContent = stats.top_keywords.length;
+    document.getElementById('stat-adv').textContent = stats.depth_distribution['Advanced'] || 0;
+    const weekCount = reports.filter(r => new Date(r.created_at+'Z') > Date.now()-7*86400000).length;
+    document.getElementById('stat-week').textContent = weekCount;
+
+    if (stats.top_keywords.length) {
+      renderKeywordCloud(stats.top_keywords.map(k => ({word:k.word, score:Math.min(k.count/5,1)})), 'kw-cloud');
+    }
+
+    const depths = [['Basic',stats.depth_distribution['Basic']||0],['Medium',stats.depth_distribution['Medium']||0],['Advanced',stats.depth_distribution['Advanced']||0]];
+    const maxD = Math.max(...depths.map(d=>d[1]),1);
+    document.getElementById('depth-chart').innerHTML = depths.map(([label,count]) => `
+      <div class="bar-row">
+        <span class="bar-label">${label}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${(count/maxD)*100}%"></div></div>
+        <span class="bar-count">${count}</span>
+      </div>`).join('');
+
+    const recent = reports.slice(0,5);
+    document.getElementById('recent-tbody').innerHTML = recent.length
+      ? recent.map(r => `
+        <tr>
+          <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500">${r.topic}</td>
+          <td>${depthBadge(r.depth)}</td>
+          <td class="text-muted text-sm">${timeAgo(r.created_at)}</td>
+          <td><a href="report.html?id=${r.id}" class="btn btn-secondary btn-sm">View</a></td>
+        </tr>`).join('')
+      : '<tr><td colspan="4"><div class="empty-state" style="padding:24px"><i data-lucide="file-x" style="width:28px;height:28px;opacity:0.3"></i><p>No reports yet â€” <a href="research.html" style="color:var(--accent2)">start your first research</a></p></div></td></tr>';
+    lucide.createIcons();
+  } catch(e) { console.error(e); }
+}
+loadDashboard();
+lucide.createIcons();
+</script>
+</body>
+</html>
+

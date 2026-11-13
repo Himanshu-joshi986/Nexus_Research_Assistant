@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History â€“ NexusResearch</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="../styles/main.css" />
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"></div>
+      <div class="logo-text">Nexus<span>Research</span></div>
+    </div>
+    <nav id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="avatar" id="user-avatar"></div>
+        <span class="name" id="user-name"></span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
+        <button class="btn-logout" id="logout-btn" style="flex:1">Sign out</button>
+        <button class="theme-toggle" id="theme-toggle-btn" title="Toggle theme"></button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="flex-between" style="margin-bottom:28px">
+      <div>
+        <h1 class="page-title">Research History</h1>
+        <p class="page-sub">All your saved reports â€” search, filter, and revisit</p>
+      </div>
+      <a href="research.html" class="btn btn-primary btn-lg">
+        <i data-lucide="search" style="width:16px;height:16px"></i> New Research
+      </a>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;padding:16px 20px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="search-input" placeholder="Search topics..." style="max-width:300px;flex:1" />
+        <select id="depth-filter" style="max-width:180px">
+          <option value="">All Depths</option>
+          <option value="Basic">Basic</option>
+          <option value="Medium">Medium</option>
+          <option value="Advanced">Advanced</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="clear-filter">Clear filters</button>
+        <span class="text-muted text-sm" id="result-count" style="margin-left:auto"></span>
+      </div>
+    </div>
+
+    <div id="reports-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+      <div class="empty-state" style="grid-column:1/-1;padding:60px">
+        <i data-lucide="loader" style="width:28px;height:28px;opacity:0.3"></i>
+        <p>Loading reports...</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../components/config.js"></script>
+<script src="../components/app.js"></script>
+<script>
+if (!Auth.require()) throw '';
+initSidebar('history');
+const user = Auth.get();
+let allReports = [];
+
+function renderGrid(reports) {
+  document.getElementById('result-count').textContent = reports.length+' report'+(reports.length!==1?'s':'');
+  const grid = document.getElementById('reports-grid');
+  if (!reports.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:60px"><i data-lucide="inbox" style="width:32px;height:32px;opacity:0.3"></i><p>No reports match your search.</p></div>';
+    lucide.createIcons(); return;
+  }
+  grid.innerHTML = reports.map(r => `
+    <div class="report-card">
+      <div class="flex-between">
+        ${depthBadge(r.depth)}
+        <span class="text-muted text-xs">${timeAgo(r.created_at)}</span>
+      </div>
+      <div class="report-card-title">${r.topic}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${(r.keywords||[]).slice(0,4).map(k=>`<span class="kw-tag" style="background:rgba(108,99,255,0.1);color:#a78bfa;font-size:0.72rem">${k.word}</span>`).join('')}
+      </div>
+      <div class="flex-between" style="margin-top:4px">
+        <span class="text-muted text-xs">${r.sources?.length||0} sources Â· ${(r.word_count||0).toLocaleString()} words</span>
+        <span class="text-muted text-xs">${new Date(r.created_at+'Z').toLocaleDateString()}</span>
+      </div>
+      <div class="divider" style="margin:10px 0"></div>
+      <div style="display:flex;gap:8px">
+        <a href="report.html?id=${r.id}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">View Report</a>
+        <button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}',this)" title="Delete">
+          <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+        </button>
+      </div>
+    </div>`).join('');
+  lucide.createIcons();
+}
+
+function applyFilters() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const d = document.getElementById('depth-filter').value;
+  renderGrid(allReports.filter(r => (!q||r.topic.toLowerCase().includes(q))&&(!d||r.depth===d)));
+}
+
+async function deleteReport(id, btn) {
+  if (!confirm('Delete this report permanently?')) return;
+  btn.disabled = true;
+  try {
+    await apiDelete('/reports/'+id);
+    allReports = allReports.filter(r=>r.id!==id);
+    applyFilters();
+  } catch(e) { alert('Error: '+e.message); btn.disabled=false; }
+}
+
+async function load() {
+  try {
+    allReports = await apiGet('/reports?user_id='+user.id);
+    applyFilters();
+  } catch {
+    document.getElementById('reports-grid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i data-lucide="alert-circle" style="width:32px;height:32px;color:var(--danger)"></i><p class="text-danger">Failed to load reports</p></div>';
+    lucide.createIcons();
+  }
+}
+
+document.getElementById('search-input').oninput = applyFilters;
+document.getElementById('depth-filter').onchange = applyFilters;
+document.getElementById('clear-filter').onclick = () => {
+  document.getElementById('search-input').value='';
+  document.getElementById('depth-filter').value='';
+  applyFilters();
+};
+
+load();
+lucide.createIcons();
+</script>
+</body>
+</html>
+
