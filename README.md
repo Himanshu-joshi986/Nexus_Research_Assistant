@@ -1,52 +1,52 @@
-# ðŸ§  AI Research Assistant
+# AI Research Assistant
 
-A complete AI-powered research assistant built for a final-year college project. It searches the web, scrapes content, processes it with NLP, stores it in a vector database, and generates detailed research reports using an LLM.
+An AI-powered research application that searches the web, extracts and analyzes source material, and generates research reports. The project includes a FastAPI backend and a responsive browser-based frontend.
 
-## ðŸ“ Project Structure
+## Contents
 
-```
-Research_model/
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ data/
-â”‚   â”‚   â”œâ”€â”€ users.json          # Local user credentials (ignored by Git)
-â”‚   â”‚   â”œâ”€â”€ reports.json        # Saved research reports (ignored by Git)
-â”‚   â”‚   â””â”€â”€ chroma_db/          # ChromaDB vector store (auto-created)
-â”‚   â”œâ”€â”€ main.py                 # FastAPI app + all endpoints
-â”‚   â”œâ”€â”€ config.py               # Configuration and constants
-â”‚   â”œâ”€â”€ storage.py              # JSON file operations
-â”‚   â”œâ”€â”€ nlp_processor.py        # NLTK, spaCy, KeyBERT pipeline
-â”‚   â”œâ”€â”€ vector_store.py         # ChromaDB + SentenceTransformers
-â”‚   â”œâ”€â”€ searcher.py             # Tavily search + Trafilatura scraping
-â”‚   â”œâ”€â”€ report_generator.py     # OpenRouter LLM integration
-â”‚   â”œâ”€â”€ requirements.txt
-â”‚   â””â”€â”€ .env                    # Local API keys (never commit)
-â”œâ”€â”€ frontend/
-â”‚   â”œâ”€â”€ index.html              # Login page
-â”‚   â”œâ”€â”€ pages/
-â”‚   â”‚   â”œâ”€â”€ dashboard.html      # Stats & overview
-â”‚   â”‚   â”œâ”€â”€ research.html       # New research + progress tracker
-â”‚   â”‚   â”œâ”€â”€ report.html         # Full report viewer + chat
-â”‚   â”‚   â””â”€â”€ history.html        # Research history
-â”‚   â”œâ”€â”€ components/
-â”‚   â”‚   â””â”€â”€ app.js              # Shared JS: auth, API, helpers
-â”‚   â””â”€â”€ styles/
-â”‚       â””â”€â”€ main.css            # Complete responsive CSS
-â”œâ”€â”€ setup.bat                   # One-click setup
-â”œâ”€â”€ start.bat                   # Start the server
-â”œâ”€â”€ DEPLOYMENT.md               # GitHub Pages + Render setup
-â””â”€â”€ README.md
-```
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Requirements](#requirements)
+- [Getting started](#getting-started)
+- [API](#api)
+- [Project structure](#project-structure)
+- [Configuration](#configuration)
+- [Data files](#data-files)
+- [Troubleshooting](#troubleshooting)
+- [Deployment](#deployment)
 
-## âš™ï¸ Prerequisites
+## Features
 
-- **Python 3.10+** installed and in PATH
-- **Tavily API key** â†’ https://tavily.com (free tier available)
-- **OpenRouter API key** â†’ https://openrouter.ai (model pricing and free availability vary)
+- Search the web with Tavily and extract article text with Trafilatura.
+- Analyze content with NLTK, spaCy, and KeyBERT.
+- Create embeddings and store them in ChromaDB for retrieval-augmented generation (RAG).
+- Generate structured Markdown reports and answer questions about them with an OpenRouter model.
+- Sign in with a locally configured account and browse saved research history.
+- Review report sources, keyword scores, and color-coded named entities.
+- View research statistics, including report counts, depth distribution, and keyword trends.
+- Use the responsive frontend on desktop or mobile.
 
-## ðŸš€ Quick Start
+## How it works
 
-### Step 1: Configure local environment
-Copy `backend/.env.example` to `backend/.env` and set your API keys and a private local admin password. `.env` is ignored by Git:
+1. Enter a topic and choose research depth and recency.
+2. Tavily finds relevant pages, and Trafilatura extracts their text.
+3. The NLP pipeline identifies entities and keywords and prepares the text.
+4. Sentence Transformers creates embeddings, which are stored in ChromaDB.
+5. Relevant passages are retrieved and sent to the configured OpenRouter model to draft a report.
+6. The report is saved and shown in the frontend.
+
+## Requirements
+
+- Python 3.11.9 (the repository's `.python-version`)
+- A [Tavily API key](https://tavily.com/)
+- An [OpenRouter API key](https://openrouter.ai/)
+
+## Getting started
+
+### 1. Configure the backend
+
+Copy `backend/.env.example` to `backend/.env`, then add your API keys and choose a private admin password:
+
 ```env
 TAVILY_API_KEY=your-tavily-key
 OPENROUTER_API_KEY=your-openrouter-key
@@ -55,136 +55,153 @@ ADMIN_PASSWORD=choose-a-private-password
 ADMIN_NAME=Admin User
 ```
 
-### Step 2: Run Setup (first time only)
+Keep `.env` files and API keys private. They are ignored by Git.
+
+### 2. Install dependencies
+
+From the project root, run the setup script in Windows Command Prompt or PowerShell:
+
 ```bat
 setup.bat
 ```
-This installs all Python packages, the spaCy model, and NLTK data.
 
-### Step 3: Start the Server
+The script creates a virtual environment, installs Python dependencies, downloads the spaCy model, and prepares NLTK data.
+
+### 3. Start the backend
+
 ```bat
 start.bat
 ```
 
-### Step 4: Open the App
-Open `frontend/index.html` directly in your browser.
+The API will be available at `http://localhost:8000`. The interactive API documentation is at `http://localhost:8000/docs`.
 
-If `backend/data/users.json` exists, the app uses those local accounts. If it is absent, the backend initializes the first admin account from the `ADMIN_USERNAME` and `ADMIN_PASSWORD` values in `backend/.env`. If `backend/data/reports.json` is missing, the app starts from `backend/data/demo_reports.json`.
+### 4. Open the frontend
 
-For GitHub Pages + Render deployment, follow [DEPLOYMENT.md](./DEPLOYMENT.md). Never commit `.env` files or API keys. Local user/report files and ChromaDB data are also excluded from Git.
+Open `frontend/index.html` in your browser. By default, the frontend connects to the backend at `http://localhost:8000`.
 
-## ðŸ”Œ API Endpoints
+On first launch, the backend creates an admin account from the `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_NAME` settings if `backend/data/users.json` does not exist. If `backend/data/reports.json` is missing, it uses the sample data in `backend/data/demo_reports.json`.
+
+## API
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/login` | Authenticate user |
-| POST | `/api/research/stream` | Start research (SSE stream) |
-| GET | `/api/reports` | List all reports |
-| GET | `/api/reports/{id}` | Get single report |
-| DELETE | `/api/reports/{id}` | Delete report |
-| POST | `/api/chat` | Chat with a report (RAG) |
-| GET | `/api/stats` | Research statistics |
+| --- | --- | --- |
+| `POST` | `/api/login` | Authenticate a user |
+| `POST` | `/api/research/stream` | Start research and stream progress using SSE |
+| `GET` | `/api/reports` | List reports |
+| `GET` | `/api/reports/{id}` | Get a report |
+| `DELETE` | `/api/reports/{id}` | Delete a report |
+| `POST` | `/api/chat` | Ask questions about a report using RAG |
+| `GET` | `/api/stats` | Get research statistics |
+| `GET` | `/health` | Check backend health |
 
-**Interactive API docs:** http://localhost:8000/docs
+## Project structure
 
-## ðŸ”„ Research Workflow
-
+```text
+Research_model/
+├── backend/
+│   ├── data/                  # Runtime user, report, and vector-store data
+│   ├── main.py                # FastAPI application and endpoints
+│   ├── config.py              # Application and model configuration
+│   ├── storage.py             # JSON file operations
+│   ├── nlp_processor.py       # NLTK, spaCy, and KeyBERT pipeline
+│   ├── vector_store.py        # ChromaDB and Sentence Transformers
+│   ├── searcher.py            # Tavily search and Trafilatura extraction
+│   ├── report_generator.py    # OpenRouter report generation
+│   ├── requirements.txt
+│   └── .env.example           # Environment variable template
+├── frontend/
+│   ├── index.html             # Login page
+│   ├── pages/                 # Dashboard, research, report, and history views
+│   ├── components/            # Shared JavaScript, API config, and sidebar
+│   └── styles/                # Responsive CSS
+├── setup.bat                  # Install dependencies and NLP data
+├── start.bat                  # Start the local backend
+├── DEPLOYMENT.md              # GitHub Pages and Render instructions
+└── README.md
 ```
-User Input (topic + depth + recency)
-        â†“
-1. Tavily API â†’ Web Search Results
-        â†“
-2. Trafilatura â†’ Scrape Article Text
-        â†“
-3. NLTK â†’ Tokenize, Remove Stopwords, Lemmatize
-   spaCy â†’ Named Entity Recognition
-   KeyBERT â†’ Keyword Extraction
-        â†“
-4. Sentence Transformers â†’ Generate Embeddings
-        â†“
-5. ChromaDB â†’ Store Vectors
-        â†“
-6. ChromaDB â†’ RAG Retrieval (top-k chunks)
-        â†“
-7. OpenRouter (Mistral-7B) â†’ Generate Report
-        â†“
-8. reports.json â†’ Save Report
-        â†“
-Frontend â†’ Display Results
-```
 
-## ðŸ“Š Data Schemas
+## Configuration
 
-### users.json
+Edit `backend/config.py` to adjust the application defaults:
+
+| Setting | Purpose | Current default |
+| --- | --- | --- |
+| `OPENROUTER_MODEL` | Report generation model | `meta-llama/llama-3.1-8b-instruct` |
+| `DEPTH_CONFIG` | Search results / retrieved chunks | Basic: 5 / 10; Medium: 10 / 20; Advanced: 15 / 30 |
+| `RECENCY_DAYS` | Date range for each recency option | 1 Month: 30; 6 Months: 180; 1 Year: 365 days |
+| `EMBEDDING_MODEL` | Sentence Transformers embedding model | `all-MiniLM-L6-v2` |
+
+## Data files
+
+The backend stores local accounts and reports as JSON files and creates a persistent ChromaDB vector store under `backend/data/` as needed. Runtime data is local and should not be committed. The account file contains the configured password, so use a private password and keep this file out of source control.
+
+The account file has this shape:
+
 ```json
 {
-  "users": [{
-    "id": "u1",
-    "username": "admin",
-    "password": "<local user password>",
-    "name": "Admin User",
-    "created_at": "2024-01-01T00:00:00"
-  }]
+  "users": [
+    {
+      "id": "u1",
+      "username": "admin",
+      "password": "<value from ADMIN_PASSWORD>",
+      "name": "Admin User",
+      "created_at": "2024-01-01T00:00:00"
+    }
+  ]
 }
 ```
 
-### reports.json
+A report record has this shape:
+
 ```json
 {
-  "reports": [{
-    "id": "uuid",
-    "user_id": "u1",
-    "username": "admin",
-    "topic": "Quantum Computing",
-    "depth": "Medium",
-    "recency": "6 Months",
-    "report": "## Executive Summary...",
-    "keywords": [{"word": "quantum", "score": 0.85}],
-    "entities": [{"text": "IBM", "label": "ORG"}],
-    "sources": [{"url": "...", "title": "..."}],
-    "session_id": "uuid",
-    "word_count": 1200,
-    "created_at": "2024-01-01T12:00:00"
-  }]
+  "reports": [
+    {
+      "id": "uuid",
+      "user_id": "u1",
+      "username": "admin",
+      "topic": "Quantum Computing",
+      "depth": "Medium",
+      "recency": "6 Months",
+      "report": "## Executive Summary...",
+      "keywords": [{"word": "quantum", "score": 0.85}],
+      "entities": [{"text": "IBM", "label": "ORG"}],
+      "sources": [{"url": "https://example.com", "title": "Example source"}],
+      "session_id": "uuid",
+      "word_count": 1200,
+      "created_at": "2024-01-01T12:00:00"
+    }
+  ]
 }
 ```
 
-## ðŸŽ›ï¸ Configuration
+The tracked `demo_reports.json` file provides sample reports when no local report file exists.
 
-Edit `backend/config.py` to change:
-- `OPENROUTER_MODEL` â€“ default: `mistralai/mistral-7b-instruct`
-- `DEPTH_CONFIG` â€“ number of sources per depth level
-- `RECENCY_DAYS` â€“ date range for each recency option
-- `EMBEDDING_MODEL` â€“ default: `all-MiniLM-L6-v2`
+## Troubleshooting
 
-## ðŸŒŸ Features
+**spaCy model not found**
 
-- **ðŸ” Login System** â€“ username/password auth with JSON storage
-- **ðŸŒ Web Research** â€“ Tavily API searches with recency filtering
-- **ðŸ“¥ Content Scraping** â€“ Trafilatura extracts clean article text
-- **ðŸ§¬ NLP Pipeline** â€“ tokenization, stopwords, lemmatization, NER, keyword extraction
-- **ðŸ”¢ Vector Embeddings** â€“ Sentence Transformers (all-MiniLM-L6-v2)
-- **ðŸ—ƒï¸ Vector Storage** â€“ Persistent ChromaDB with semantic search
-- **ðŸŽ¯ RAG** â€“ Retrieval Augmented Generation for accurate reports
-- **âœï¸ AI Reports** â€“ Structured markdown reports via OpenRouter LLM
-- **ðŸ’¬ Chat Interface** â€“ Ask questions about any report using RAG
-- **â˜ï¸ Keyword Cloud** â€“ Visual keyword frequency display
-- **ðŸ·ï¸ Named Entities** â€“ Color-coded entity type display
-- **ðŸ”— Source Viewer** â€“ All scraped sources with links
-- **ðŸ“Š Statistics** â€“ Report counts, depth distribution, keyword trends
-- **ðŸ“š History** â€“ Searchable, filterable report archive
-- **ðŸ“± Responsive** â€“ Works on desktop and mobile
-
-## ðŸ› ï¸ Troubleshooting
-
-**spaCy model not found:**
 ```bash
 python -m spacy download en_core_web_sm
 ```
 
-**CORS errors:** Ensure the backend is running on port 8000 before opening the frontend.
+**CORS errors**
 
-**Slow first run:** Sentence Transformer model downloads on first use (~90MB).
+Make sure the backend is running on port `8000` before opening the frontend.
 
-**API key errors:** Double-check `.env` file has no spaces around `=`.
+**First research run is slow**
+
+Sentence Transformers downloads its embedding model on first use. Later runs can reuse the downloaded model.
+
+**API key errors**
+
+Check that both keys are set in `backend/.env` and that there are no spaces around the `=` signs.
+
+**Frontend cannot reach the deployed backend**
+
+The frontend API URL is set in `frontend/components/config.js` and defaults to `http://localhost:8000`. For a deployed site, update it to the backend URL as described in [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+## Deployment
+
+For GitHub Pages and Render deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
