@@ -15,4 +15,3 @@ __pycache__/
 backend/data/users.json
 backend/data/reports.json
 backend/data/chroma_db/
-

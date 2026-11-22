@@ -147,4 +147,3 @@ function timeAgo(iso) {
   if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
   return Math.floor(diff/86400) + 'd ago';
 }
-

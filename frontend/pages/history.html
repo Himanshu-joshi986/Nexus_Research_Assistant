@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>History â€“ NexusResearch</title>
+  <title>History – NexusResearch</title>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="../styles/main.css" />
 </head>
@@ -31,7 +31,7 @@
     <div class="flex-between" style="margin-bottom:28px">
       <div>
         <h1 class="page-title">Research History</h1>
-        <p class="page-sub">All your saved reports â€” search, filter, and revisit</p>
+        <p class="page-sub">All your saved reports — search, filter, and revisit</p>
       </div>
       <a href="research.html" class="btn btn-primary btn-lg">
         <i data-lucide="search" style="width:16px;height:16px"></i> New Research
@@ -87,7 +87,7 @@ function renderGrid(reports) {
         ${(r.keywords||[]).slice(0,4).map(k=>`<span class="kw-tag" style="background:rgba(108,99,255,0.1);color:#a78bfa;font-size:0.72rem">${k.word}</span>`).join('')}
       </div>
       <div class="flex-between" style="margin-top:4px">
-        <span class="text-muted text-xs">${r.sources?.length||0} sources Â· ${(r.word_count||0).toLocaleString()} words</span>
+        <span class="text-muted text-xs">${r.sources?.length||0} sources · ${(r.word_count||0).toLocaleString()} words</span>
         <span class="text-muted text-xs">${new Date(r.created_at+'Z').toLocaleDateString()}</span>
       </div>
       <div class="divider" style="margin:10px 0"></div>
@@ -140,4 +140,3 @@ lucide.createIcons();
 </script>
 </body>
 </html>
-

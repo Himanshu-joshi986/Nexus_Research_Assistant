@@ -1,7 +1,8 @@
 import asyncio
 import json
+import traceback
 import uuid
-from datetime import datetime
+from collections import Counter
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, HTTPException
@@ -14,6 +15,7 @@ import nlp_processor
 import vector_store
 import searcher
 import report_generator
+from config import DEPTH_CONFIG
 
 app = FastAPI(title="AI Research Assistant")
 
@@ -93,21 +95,17 @@ async def research_pipeline(req: ResearchRequest) -> AsyncGenerator[str, None]:
             all_entities.extend(nlp_result["entities"])
             all_keywords.extend(nlp_result["keywords"])
             chunks = nlp_processor.chunk_text(article["text"])
-            for chunk in chunks:
-                all_chunks.append(chunk)
-                chunk_metas.append({"url": article["url"], "title": article["title"]})
+            all_chunks.extend(chunks)
+            chunk_metas.extend({"url": article["url"], "title": article["title"]} for _ in chunks)
 
-        # Deduplicate keywords by word
-        seen = set()
-        unique_keywords = []
+        # Deduplicate keywords by word, keeping the highest score for each
+        best = {}
         for k in sorted(all_keywords, key=lambda x: -x["score"]):
-            if k["word"] not in seen:
-                seen.add(k["word"])
-                unique_keywords.append(k)
+            best.setdefault(k["word"], k)
+        unique_keywords = list(best.values())
 
         yield emit(4, f"Processed {len(all_chunks)} chunks. Generating embeddings...")
         await asyncio.sleep(0.1)
-        from config import DEPTH_CONFIG
         max_chunks = DEPTH_CONFIG[req.depth]["max_chunks"]
         store_chunks = all_chunks[:max_chunks]
         store_metas = chunk_metas[:max_chunks]
@@ -150,7 +148,6 @@ async def research_pipeline(req: ResearchRequest) -> AsyncGenerator[str, None]:
         })
 
     except Exception as e:
-        import traceback
         traceback.print_exc()
         yield emit(0, f"Error: {str(e)}", {"error": True})
 
@@ -180,7 +177,9 @@ def get_report(report_id: str):
 
 @app.delete("/api/reports/{report_id}")
 def delete_report(report_id: str):
-    storage.delete_report(report_id)
+    removed = storage.delete_report(report_id)
+    if removed and removed.get("session_id"):
+        vector_store.delete_session(removed["session_id"])
     return {"success": True}
 
 
@@ -203,21 +202,11 @@ async def chat(req: ChatRequest):
 @app.get("/api/stats")
 def get_stats(user_id: str = None):
     reports = storage.get_reports(user_id)
-    topics = [r["topic"] for r in reports]
-    depths = {}
-    for r in reports:
-        depths[r.get("depth", "Medium")] = depths.get(r.get("depth", "Medium"), 0) + 1
-    all_kw = []
-    for r in reports:
-        all_kw.extend(r.get("keywords", []))
-    kw_freq: dict = {}
-    for k in all_kw:
-        kw_freq[k["word"]] = kw_freq.get(k["word"], 0) + 1
-    top_keywords = sorted(kw_freq.items(), key=lambda x: -x[1])[:30]
+    depths = Counter(r.get("depth", "Medium") for r in reports)
+    kw_freq = Counter(k["word"] for r in reports for k in r.get("keywords", []))
     return {
         "total_reports": len(reports),
-        "topics": topics,
-        "depth_distribution": depths,
-        "top_keywords": [{"word": w, "count": c} for w, c in top_keywords],
+        "topics": [r["topic"] for r in reports],
+        "depth_distribution": dict(depths),
+        "top_keywords": [{"word": w, "count": c} for w, c in kw_freq.most_common(30)],
     }
-

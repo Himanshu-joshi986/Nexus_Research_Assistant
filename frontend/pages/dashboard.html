@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard â€“ NexusResearch</title>
+  <title>Dashboard – NexusResearch</title>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="../styles/main.css" />
 </head>
@@ -31,7 +31,7 @@
     <div class="flex-between" style="margin-bottom:28px">
       <div>
         <p class="text-muted text-sm" style="margin-bottom:4px">Good to see you,</p>
-        <h1 class="page-title" style="margin-bottom:0" id="welcome-name">â€“</h1>
+        <h1 class="page-title" style="margin-bottom:0" id="welcome-name">–</h1>
       </div>
       <a href="research.html" class="btn btn-primary btn-lg">
         <i data-lucide="search" style="width:16px;height:16px"></i> New Research
@@ -41,19 +41,19 @@
     <div class="stat-grid">
       <div class="stat-card">
         <div class="icon"><i data-lucide="file-text" style="width:28px;height:28px;color:#a78bfa"></i></div>
-        <div class="label">Total Reports</div><div class="value" id="stat-total">â€“</div>
+        <div class="label">Total Reports</div><div class="value" id="stat-total">–</div>
       </div>
       <div class="stat-card">
         <div class="icon"><i data-lucide="trending-up" style="width:28px;height:28px;color:#10d9a0"></i></div>
-        <div class="label">This Week</div><div class="value" id="stat-week">â€“</div>
+        <div class="label">This Week</div><div class="value" id="stat-week">–</div>
       </div>
       <div class="stat-card">
         <div class="icon"><i data-lucide="layers" style="width:28px;height:28px;color:#f59e0b"></i></div>
-        <div class="label">Advanced</div><div class="value" id="stat-adv">â€“</div>
+        <div class="label">Advanced</div><div class="value" id="stat-adv">–</div>
       </div>
       <div class="stat-card">
         <div class="icon"><i data-lucide="tag" style="width:28px;height:28px;color:#38bdf8"></i></div>
-        <div class="label">Unique Keywords</div><div class="value" id="stat-kw">â€“</div>
+        <div class="label">Unique Keywords</div><div class="value" id="stat-kw">–</div>
       </div>
     </div>
 
@@ -137,7 +137,7 @@ async function loadDashboard() {
           <td class="text-muted text-sm">${timeAgo(r.created_at)}</td>
           <td><a href="report.html?id=${r.id}" class="btn btn-secondary btn-sm">View</a></td>
         </tr>`).join('')
-      : '<tr><td colspan="4"><div class="empty-state" style="padding:24px"><i data-lucide="file-x" style="width:28px;height:28px;opacity:0.3"></i><p>No reports yet â€” <a href="research.html" style="color:var(--accent2)">start your first research</a></p></div></td></tr>';
+      : '<tr><td colspan="4"><div class="empty-state" style="padding:24px"><i data-lucide="file-x" style="width:28px;height:28px;opacity:0.3"></i><p>No reports yet — <a href="research.html" style="color:var(--accent2)">start your first research</a></p></div></td></tr>';
     lucide.createIcons();
   } catch(e) { console.error(e); }
 }
@@ -146,4 +146,3 @@ lucide.createIcons();
 </script>
 </body>
 </html>
-

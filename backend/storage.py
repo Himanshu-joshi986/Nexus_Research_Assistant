@@ -11,54 +11,49 @@ from config import (
 )
 
 
-def _read(path):
+def _default_data(path):
+    if path == USERS_FILE:
+        if not ADMIN_USERNAME or not ADMIN_PASSWORD:
+            raise RuntimeError(
+                "Set ADMIN_USERNAME and ADMIN_PASSWORD to initialize the admin account."
+            )
+        return {
+            "users": [{
+                "id": "u1",
+                "username": ADMIN_USERNAME,
+                "password": ADMIN_PASSWORD,
+                "name": ADMIN_NAME,
+                "created_at": datetime.utcnow().isoformat(),
+            }]
+        }
+    demo_reports_file = os.path.join(os.path.dirname(path), "demo_reports.json")
     try:
-        with open(path, "r") as f:
+        with open(demo_reports_file, encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        if path == USERS_FILE:
-            if not ADMIN_USERNAME or not ADMIN_PASSWORD:
-                raise RuntimeError(
-                    "Set ADMIN_USERNAME and ADMIN_PASSWORD to initialize the admin account."
-                )
-            data = {
-                "users": [{
-                    "id": "u1",
-                    "username": ADMIN_USERNAME,
-                    "password": ADMIN_PASSWORD,
-                    "name": ADMIN_NAME,
-                    "created_at": datetime.utcnow().isoformat(),
-                }]
-            }
-        elif path == REPORTS_FILE:
-            demo_reports_file = os.path.join(
-                os.path.dirname(path), "demo_reports.json"
-            )
-            try:
-                with open(demo_reports_file, "r") as f:
-                    data = json.load(f)
-            except FileNotFoundError:
-                data = {"reports": []}
-        else:
-            raise
+        return {"reports": []}
+
+
+def _read(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        data = _default_data(path)
         _write(path, data)
         return data
 
 
 def _write(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, default=str)
 
 
 # ---------- Users ----------
 def get_user(username: str, password: str):
-    data = _read(USERS_FILE)
-    for u in data["users"]:
-        if u["username"] == username and u["password"] == password:
-            return u
-    return None
+    users = _read(USERS_FILE)["users"]
+    return next((u for u in users if u["username"] == username and u["password"] == password), None)
 
 
 # ---------- Reports ----------
@@ -72,23 +67,20 @@ def save_report(report: dict) -> str:
 
 
 def get_reports(user_id: str = None):
-    data = _read(REPORTS_FILE)
-    reports = data["reports"]
+    reports = _read(REPORTS_FILE)["reports"]
     if user_id:
         reports = [r for r in reports if r.get("user_id") == user_id]
     return sorted(reports, key=lambda x: x.get("created_at", ""), reverse=True)
 
 
 def get_report(report_id: str):
-    data = _read(REPORTS_FILE)
-    for r in data["reports"]:
-        if r["id"] == report_id:
-            return r
-    return None
+    return next((r for r in _read(REPORTS_FILE)["reports"] if r["id"] == report_id), None)
 
 
 def delete_report(report_id: str):
+    """Remove a report and return it (or None if it did not exist)."""
     data = _read(REPORTS_FILE)
+    removed = next((r for r in data["reports"] if r["id"] == report_id), None)
     data["reports"] = [r for r in data["reports"] if r["id"] != report_id]
     _write(REPORTS_FILE, data)
-
+    return removed

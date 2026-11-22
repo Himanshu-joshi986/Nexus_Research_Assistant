@@ -17,7 +17,8 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY", "")
-HUGGINGFACE_MODEL = "mistralai/Mistral-7B-Instruct-v0.3"
+HUGGINGFACE_MODEL = "meta-llama/Llama-3.1-8B-Instruct"
+HUGGINGFACE_BASE_URL = "https://router.huggingface.co/v1"
 
 DEPTH_CONFIG = {
     "Basic": {"max_results": 5, "max_chunks": 10},
@@ -30,4 +31,3 @@ RECENCY_DAYS = {
     "6 Months": 180,
     "1 Year": 365,
 }
-

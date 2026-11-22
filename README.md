@@ -204,4 +204,3 @@ The frontend API URL is set in `frontend/components/config.js` and defaults to `
 ## Deployment
 
 For GitHub Pages and Render deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
-

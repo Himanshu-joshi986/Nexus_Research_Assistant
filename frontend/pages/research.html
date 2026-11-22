@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>New Research â€“ NexusResearch</title>
+  <title>New Research – NexusResearch</title>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <link rel="stylesheet" href="../styles/main.css" />
 </head>
@@ -42,17 +42,17 @@
           <div class="form-group">
             <label>Research Depth</label>
             <select id="depth">
-              <option value="Basic">Basic â€” 5 sources, quick overview</option>
-              <option value="Medium" selected>Medium â€” 10 sources, balanced</option>
-              <option value="Advanced">Advanced â€” 15 sources, deep dive</option>
+              <option value="Basic">Basic — 5 sources, quick overview</option>
+              <option value="Medium" selected>Medium — 10 sources, balanced</option>
+              <option value="Advanced">Advanced — 15 sources, deep dive</option>
             </select>
           </div>
           <div class="form-group">
             <label>Content Recency</label>
             <select id="recency">
-              <option value="1 Month">Last 1 Month â€” most recent</option>
-              <option value="6 Months" selected>Last 6 Months â€” recommended</option>
-              <option value="1 Year">Last 1 Year â€” broader coverage</option>
+              <option value="1 Month">Last 1 Month — most recent</option>
+              <option value="6 Months" selected>Last 6 Months — recommended</option>
+              <option value="1 Year">Last 1 Year — broader coverage</option>
             </select>
           </div>
           <button type="submit" class="btn btn-primary btn-lg w-full" style="justify-content:center;margin-top:4px" id="start-btn">
@@ -104,7 +104,7 @@
       <div class="flex-between" style="margin-bottom:16px">
         <div>
           <div class="section-head" style="margin-bottom:2px">Report Preview</div>
-          <p class="text-muted text-sm">First 1200 characters â€” click to read full report</p>
+          <p class="text-muted text-sm">First 1200 characters — click to read full report</p>
         </div>
         <a href="#" class="btn btn-primary" id="view-full-btn">
           <i data-lucide="arrow-right" style="width:15px;height:15px"></i> Read Full Report
@@ -183,7 +183,7 @@ document.getElementById('research-form').onsubmit = async (e) => {
         }
         setStep(data.step, data.message);
         if (data.done) {
-          document.getElementById('report-preview').innerHTML = renderMarkdown(data.report.substring(0,1200)+'â€¦');
+          document.getElementById('report-preview').innerHTML = renderMarkdown(data.report.substring(0,1200)+'…');
           document.getElementById('view-full-btn').href = 'report.html?id='+data.report_id;
           document.getElementById('result-panel').classList.remove('hidden');
           btn.disabled = false;
@@ -199,4 +199,3 @@ lucide.createIcons();
 </script>
 </body>
 </html>
-
